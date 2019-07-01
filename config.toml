@@ -1,0 +1,48 @@
+BaseUrl= "https://chihkaiyu.github.io"
+LanguageCode= "zh-TW"
+Title= "No Idiots Allowed Here"
+paginate = 10
+canonifyurls = true
+theme = "casper"
+DisqusShortname = "chihkaiyu"
+
+[[menu.main]]
+    identifier = "home"
+    name = "Home"
+    url = "/"
+    weight = 100
+
+[[menu.main]]
+    identifier = "about"
+    name = "About"
+    url = "/page/about"
+    weight = 99
+
+[[menu.main]]
+    identifier = "archives"
+    name = "Archives"
+    url = "/post"
+    weight = 98
+
+[[menu.main]]
+    identifier = "tags"
+    name = "Tags"
+    url = "/page/tags"
+    weight = 97
+
+[params]
+  cover = "images/DSC03509.jpg"
+  author = "Chih Kai Yu"
+  authorlocation = "Taipei, Taiwan"
+  authorwebsite = "https://chihkaiyu.github.io"
+  authorbio= "Software Engineer"
+  logo = "images/profile.png"
+  githubName = "chihkaiyu"
+  twitterName = "kai_chihkaiyu"
+  googleAnalyticsUserID = "UA-132491233-1"
+  hideHUGOSupport = false
+  
+  # Setting a value will load highlight.js and enable syntax highlighting using the style selected.
+  # See https://github.com/isagalaev/highlight.js/tree/master/src/styles for available styles
+  # A preview of above styles can be viewed at https://highlightjs.org/static/demo/
+  hjsStyle = "default"
