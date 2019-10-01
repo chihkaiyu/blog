@@ -11,3 +11,4 @@ Select the tag you want to read:
 - [Digest](/tags/digest/)
 - [DevOps](/tags/devops/)
 - [Golang](/tags/golang/)
+- [Algorithm](/tags/algorithm/)
