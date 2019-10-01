@@ -1,10 +1,10 @@
 ---
 title: "Why Quick Sort Is Faster than Heap Sort?"
 slug: "why-quick-sort-is-faster-than-heap-sort"
-date: 2019-10-02T01:06:00+08:00
-draft: true
-image: "/content/images/2019/07/DSC05572.jpg"
-tags: [""]
+date: 2019-10-02T01:10:00+08:00
+draft: false
+image: "/content/images/2019/10/DSC05514.jpg"
+tags: ["algorithm"]
 ---
 
 # Why Quick Sort?
