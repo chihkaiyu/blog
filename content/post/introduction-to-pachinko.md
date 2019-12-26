@@ -1,9 +1,9 @@
 ---
 title: "Introduction to Pachinko (パチンコ)"
 slug: "introduction-to-pachinko"
-date: 2019-12-27T00:17:00+08:00
+date: 2019-12-27T00:53:00+08:00
 draft: false
-image: "/content/images/2019/10/DSC05514.jpg"
+image: "/content/images/2019/12/DSC06605.jpg"
 tags: ["life"]
 ---
 
