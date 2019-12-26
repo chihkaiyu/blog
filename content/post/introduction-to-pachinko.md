@@ -23,7 +23,7 @@ tags: ["life"]
 
 找到喜歡的機台後，必須先檢查該機台上沒有鋼珠，也沒有擺放任何東西 (手帕、飲料…等等)，若有各種東西在機台上，代表是其他客人先佔位置了。
 
-![](/content/images/2019/12/insert-bill.jpg.jpg)  
+![](/content/images/2019/12/insert-bill.jpg)  
 如上圖所示，左上方的口可以放入紙鈔，放入不代表就要全打完，沒打完的可以退錢所以不用擔心。  
 
 ![](/content/images/2019/12/remain-money.jpg)  
@@ -72,7 +72,7 @@ tags: ["life"]
 ![](/content/images/2019/12/first-layer.jpg)  
 如上圖，是機台的第一層。上面有提到機台右邊會有一個沒有寫字的大按鈕，按著就可以讓珠子掉到第二層。  
 
-![](/content/images/2019/12/second-layter.jpg)  
+![](/content/images/2019/12/second-layer.jpg)  
 如上圖，是機台的第二層，若中大獎時，機台偵測到第一層滿了，就會直接把珠子吐到第二層。第二層通常會有個按鈕，如上圖紅框處，按下去後第二層就會開個洞，讓珠子掉到第三層，但不同主題的機台會長得很不一樣，有些很難辨認。  
 
 ![](/content/images/2019/12/remain-ball.jpg)  
