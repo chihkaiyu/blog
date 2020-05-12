@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>algorithm on No Idiots Allowed Here</title>
+    <link>https://chihkaiyu.github.io/tags/algorithm/</link>
+    <description>Recent content in algorithm on No Idiots Allowed Here</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-TW</language>
+    <lastBuildDate>Wed, 02 Oct 2019 01:10:00 +0800</lastBuildDate>
+    
+	<atom:link href="https://chihkaiyu.github.io/tags/algorithm/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Why Quick Sort Is Faster than Heap Sort?</title>
+      <link>https://chihkaiyu.github.io/post/why-quick-sort-is-faster-than-heap-sort/</link>
+      <pubDate>Wed, 02 Oct 2019 01:10:00 +0800</pubDate>
+      
+      <guid>https://chihkaiyu.github.io/post/why-quick-sort-is-faster-than-heap-sort/</guid>
+      <description>Why Quick Sort? I was reviewing sorting algorithm for my interview. The question just popped up in my mind when I was peeking the cheat sheet.
+[1]
+You can see the best, average and worst time complexity of heap sort are all O(n logn) but it&amp;rsquo;s O(n^2) for worst of quick sort.
+Then why do we always use quick sort? Since quick sort can&amp;rsquo;t beat heap sort in any cases, not even in space complexity.</description>
+    </item>
+    
+  </channel>
+</rss>

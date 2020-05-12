@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-TW" lang="zh-TW">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.70.0" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Migrate sameersbn/docker-gitlab to gitlab/gitlab-ce &middot; No Idiots Allowed Here</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://chihkaiyu.github.io/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="https://chihkaiyu.github.io/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://chihkaiyu.github.io"><h1>No Idiots Allowed Here</h1></a>
+      <p class="lead">
+       Are you an idiot? 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://chihkaiyu.github.io">Home</a> </li>
+        <li><a href="https://chihkaiyu.github.io/page/about"> About </a></li><li><a href="https://chihkaiyu.github.io/post"> Archives </a></li><li><a href="https://chihkaiyu.github.io/page/tags"> Tags </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>Migrate sameersbn/docker-gitlab to gitlab/gitlab-ce</h1>
+  <time datetime=2018-06-12T17:15:55&#43;0800 class="post-date">Tue, Jun 12, 2018</time>
+  <p>This article records how I migrate <a href="https://about.gitlab.com/">GitLab</a> from <a href="https://github.com/sameersbn/docker-gitlab">sameersbn/gitlab</a> to <a href="https://hub.docker.com/r/gitlab/gitlab-ce/">gitlab/gitlab-ce</a>.</p>
+<h1 id="why">Why</h1>
+<p>Why would I bother to migrate it? There are several reasons and here are the most important (for me) ones.</p>
+<ul>
+<li>If you want to enable some functions in GitLab, you would search it from official documents and here comes the pain: you don’t know how to configure it in <code>sameersbn/gitlab</code>. Though the documents of sameersbn/gitlab are quite good, it&rsquo;s sometimes hard to mapping them together</li>
+<li><code>sameersbn/gitlab</code> is driven by  community and you don’t know when it would give up maintaining it (for the record, <code>sameersbn/docker-gitlab</code> is a excellent project. Well documented and always keep up the releases with official GitLab)</li>
+<li>I love official thing</li>
+</ul>
+<h1 id="what">What</h1>
+<p>What are the problems we would encounter? There is one major problem: the installation source are different between <code>sameersbn/docker-gitlab</code> and <code>gitlab/gitlab-ce</code>. The former install GitLab from source and the latter install it from omnibus package (it means Ubuntu or Debian package, I spent nearly half year to figure it out) which makes it much more difficult to migrate.</p>
+<h1 id="how">How</h1>
+<p>I was trying to map the data folder between <code>sameersbn/docker-gitlab</code> and <code>gitlab/gitlab-ce</code> and it failed, of course. Someday the idea just came up to my mind: why not just backup GitLab and restore it? GitLab must have provided the backup and restore functions and it should be the same format no matter how you install GitLab from. It works but there is another problem now: some secret configuration files are excluded from the backup. Now I can&rsquo;t access the secret variables and database because I don&rsquo;t have the keys. I&rsquo;d had few tries to covert the configuration file and it works as I thought.</p>
+<p>For simplicity, all paths below we talk about are the paths in container. If I mention about transferring the files between two containers, you may use the command <code>docker cp</code> to copy the files to the host and then copy it to the other container. Or, you may mount the folder to the host and simply copy the files.</p>
+<p>Here are the steps how I migrate it and the details are at the bottom.</p>
+<ol>
+<li>Create backup from <code>sameersbn/docker-gitlab</code> container</li>
+<li>Spin up a new official GitLab container</li>
+<li>Change the configuration in official GitLab container</li>
+<li>Restore from backup</li>
+<li>Check</li>
+</ol>
+<h2 id="create-backup-from-sameersbndocker-gitlab-container">Create Backup From sameersbn/docker-gitlab Container</h2>
+<p>Mapping the data by folder between them is not a good idea so the easiest way is that use the built-in backup and restore functions.</p>
+<ol>
+<li>Shut down GitLab, redis and postgresql containers</li>
+<li>Spin up GitLab and other services again but make GitLab unreachable via not exposing the port</li>
+<li>Access GitLab container inside and execute the command: <code>/sbin/entrypoint.sh app:rake gitlab:backup:create</code></li>
+<li>Backup file will be generated at <code>/home/git/data/backups</code> in container</li>
+</ol>
+<p>Reference: <a href="https://github.com/sameersbn/docker-gitlab#creating-backups">https://github.com/sameersbn/docker-gitlab#creating-backups</a></p>
+<h2 id="spin-up-an-official-gitlab-container">Spin Up an Official GitLab Container</h2>
+<p>We will have to change the configuration for storing our secrete keys otherwise we can’t access the secret variables or database. We first spin up an official GitLab container to initialize the folder structure so that we can easily find the configuration files.</p>
+<ol>
+<li>Create 3 folders first: <code>config, logs, data</code></li>
+<li>Execute the command and remember choose the same verion of GitLab:</li>
+</ol>
+<pre><code>docker run -it \
+    -p 10080:80 \
+    -p 10022:22 \
+    --name gitlab \
+    -v /PATH-TO-YOUR-FOLDER/config:/etc/gitlab:Z \
+    -v /PATH-TO-YOUR-FOLDER/logs:/var/log/gitlab:Z \
+    -v /PATH-TO-YOUR-FOLDER/data:/var/opt/gitlab:Z \
+    gitlab/gitlab-ce:YOUR-GITLAB-VERSION
+</code></pre><ol start="3">
+<li>Wait until all components have been initialized. You can hit the home page of GitLab via <code>http://YOUR-IP:10080/</code> to check. When you see the page asks you to set new password for <code>root</code>, it means all components are done.</li>
+<li>Copy the backup file to <code>/var/opt/gitlab/backups/</code> in official GitLab container</li>
+</ol>
+<p>Reference: <a href="https://docs.gitlab.com/omnibus/docker/">https://docs.gitlab.com/omnibus/docker/</a></p>
+<h2 id="change-the-configuration-in-official-gitlab-container">Change the Configuration in Official GitLab Container</h2>
+<p>There are some secret keys for encrypting the data in GitLab and the built-in backup function won’t backup those things due to security reason. We must change it by ourselves and here are the instructions:</p>
+<ol>
+<li>Stop the official GitLab container</li>
+<li>Find out these 3 keys in <code>sameersbn/docker-gitlab</code> container:</li>
+</ol>
+<ul>
+<li><code>GITLAB_SECRETS_OTP_KEY_BASE</code></li>
+<li><code>GITLAB_SECRETS_DB_KEY_BASE</code></li>
+<li><code>GITLAB_SECRETS_SECRET_KEY_BASE</code></li>
+</ul>
+<p>You can take a look in your start script or access the <code>sameersbn/docker-gitlab</code> container to see the file: <code>/home/git/gitlab/config/secrets.yml</code></p>
+<ol start="4">
+<li>Fill those 3 keys to the corresponding field in the file <code>/etc/gitlab/gitlab-secrets.json</code> of official GitLab container</li>
+<li>Copy all other files under <code>/home/git/data/ssh/*</code> in <code>sameersbn/docker-gitlab</code> container to the config location of official GitLab, which is <code>/etc/gitlab/</code></li>
+<li>Spin up the official GitLab container again</li>
+</ol>
+<p>Reference: <a href="https://docs.gitlab.com/ce/raketasks/backup_restore.html#restore-prerequisites">https://docs.gitlab.com/ce/raketasks/backup_restore.html#restore-prerequisites</a></p>
+<h2 id="restore">Restore</h2>
+<ol>
+<li>Access the container of official GitLab: <code>docker exec -ti gitlab /bin/bash</code></li>
+<li>Stop <code>unicorn</code> and <code>sidekiq</code>:</li>
+</ol>
+<pre><code>gitlab-ctl stop unicorn
+gitlab-ctl stop sidekiq
+# Verify
+gitlab-ctl status
+</code></pre><ol start="3">
+<li>Restore GitLab and it will ask you some questions to double confirm the restoring process because it will delete all contents of your GitLab database. You also must specify the timestamp of the backup you wish to restore:</li>
+</ol>
+<pre><code># This command will overwrite the contents of your GitLab database!
+gitlab-rake gitlab:backup:restore BACKUP=1493107454_2018_04_25_10.6.4-ce
+</code></pre><ol start="4">
+<li>Restart GitLab and check:</li>
+</ol>
+<pre><code>gitlab-ctl restart
+gitlab-rake gitlab:check SANITIZE=true
+</code></pre><p>Reference: <a href="https://docs.gitlab.com/ce/raketasks/backup_restore.html#restore-for-omnibus-installations">https://docs.gitlab.com/ce/raketasks/backup_restore.html#restore-for-omnibus-installations</a></p>
+<h2 id="check">Check</h2>
+<p>There is no script to do this and you could probably only try hard to click every page on GitLab. Good luck.<br>
+The best way I could come up with is that writing a script to access every project in the GitLab. If the response code is <code>200</code>, GitLab probably works fine.</p>
+<h1 id="notes">Notes</h1>
+<ul>
+<li>I guess you can restore the data and then changing the config (<code>/etc/gitlab/gitlab-secrets.json</code>) since the official restoring document says so.</li>
+<li>It’s very hard to migrate and you definitely won’t want to use production data. Use backup data to practice.</li>
+</ul>
+
+</div>
+
+<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "chihkaiyu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </main>
+
+    
+      
+    
+  </body>
+</html>

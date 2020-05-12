@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>docker on No Idiots Allowed Here</title>
+    <link>https://chihkaiyu.github.io/tags/docker/</link>
+    <description>Recent content in docker on No Idiots Allowed Here</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-TW</language>
+    <lastBuildDate>Tue, 12 Jun 2018 17:15:55 +0800</lastBuildDate>
+    
+	<atom:link href="https://chihkaiyu.github.io/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Migrate sameersbn/docker-gitlab to gitlab/gitlab-ce</title>
+      <link>https://chihkaiyu.github.io/post/migrate-sameersbn-docker-gitlab-to-gitlab-gitlab-ce/</link>
+      <pubDate>Tue, 12 Jun 2018 17:15:55 +0800</pubDate>
+      
+      <guid>https://chihkaiyu.github.io/post/migrate-sameersbn-docker-gitlab-to-gitlab-gitlab-ce/</guid>
+      <description>This article records how I migrate GitLab from sameersbn/gitlab to gitlab/gitlab-ce.
+Why Why would I bother to migrate it? There are several reasons and here are the most important (for me) ones.
+ If you want to enable some functions in GitLab, you would search it from official documents and here comes the pain: you don’t know how to configure it in sameersbn/gitlab. Though the documents of sameersbn/gitlab are quite good, it&amp;rsquo;s sometimes hard to mapping them together sameersbn/gitlab is driven by community and you don’t know when it would give up maintaining it (for the record, sameersbn/docker-gitlab is a excellent project.</description>
+    </item>
+    
+    <item>
+      <title>How to Install Ghost with Nginx and MySQL</title>
+      <link>https://chihkaiyu.github.io/post/how-to-set-up-ghost-site-with-https/</link>
+      <pubDate>Sat, 19 May 2018 23:33:58 +0800</pubDate>
+      
+      <guid>https://chihkaiyu.github.io/post/how-to-set-up-ghost-site-with-https/</guid>
+      <description>This article will show you how to install and configure Ghost with Nginx and MySQL. In fact, it is that how this blog has been built. This article contains:
+ Prerequisite Environment Ghost configuration Nginx configuration MySQL configuration Docker Compose Summary  Prerequisite I use Docker for handling my environment information and I suppose you have the basic knowledge about Docker and Docker Compose. Before you continue, you must ensure both of Docker and Docker Compose have been installed on your machine.</description>
+    </item>
+    
+  </channel>
+</rss>

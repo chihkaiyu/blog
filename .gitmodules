@@ -1,7 +1,7 @@
-[submodule "themes/casper"]
-	path = themes/casper
-	url = https://github.com/vjeantet/hugo-theme-casper.git
 [submodule "public"]
 	path = public
 	url = git@github.com:chihkaiyu/chihkaiyu.github.io.git
 	branch = master
+[submodule "themes/hyde"]
+	path = themes/hyde
+	url = https://github.com/spf13/hyde.git

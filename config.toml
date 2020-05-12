@@ -3,32 +3,16 @@ LanguageCode= "zh-TW"
 Title= "No Idiots Allowed Here"
 paginate = 10
 canonifyurls = true
-theme = "casper"
-DisqusShortname = "chihkaiyu"
+theme = "hyde"
+disqusShortname = "chihkaiyu"
+hasCJKLanguage = true
 
-[[menu.main]]
-    identifier = "home"
-    name = "Home"
-    url = "/"
-    weight = 100
-
-[[menu.main]]
-    identifier = "about"
-    name = "About"
-    url = "/page/about"
-    weight = 99
-
-[[menu.main]]
-    identifier = "archives"
-    name = "Archives"
-    url = "/post"
-    weight = 98
-
-[[menu.main]]
-    identifier = "tags"
-    name = "Tags"
-    url = "/page/tags"
-    weight = 97
+[Menus]
+  main = [
+      {Name = "About", URL = "/page/about"},
+      {Name = "Archives", URL = "/post"},
+      {Name = "Tags", URL = "/page/tags"},
+  ]
 
 [params]
   cover = "images/DSC03509.jpg"
@@ -41,6 +25,7 @@ DisqusShortname = "chihkaiyu"
   twitterName = "kai_chihkaiyu"
   googleAnalyticsUserID = "UA-132491233-1"
   hideHUGOSupport = false
+  description = "Are you an idiot?"
   
   # Setting a value will load highlight.js and enable syntax highlighting using the style selected.
   # See https://github.com/isagalaev/highlight.js/tree/master/src/styles for available styles

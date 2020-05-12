@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-TW" lang="zh-TW">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.70.0" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Prometheus Survey &middot; No Idiots Allowed Here</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://chihkaiyu.github.io/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="https://chihkaiyu.github.io/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://chihkaiyu.github.io"><h1>No Idiots Allowed Here</h1></a>
+      <p class="lead">
+       Are you an idiot? 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://chihkaiyu.github.io">Home</a> </li>
+        <li><a href="https://chihkaiyu.github.io/page/about"> About </a></li><li><a href="https://chihkaiyu.github.io/post"> Archives </a></li><li><a href="https://chihkaiyu.github.io/page/tags"> Tags </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>Prometheus Survey</h1>
+  <time datetime=2019-01-15T22:16:00&#43;0800 class="post-date">Tue, Jan 15, 2019</time>
+  <h1 id="prometheus-survey">Prometheus Survey</h1>
+<h1 id="architecture">Architecture</h1>
+<p><img src="https://chihkaiyu.github.io/content/images/2019/01/architecture.png" alt=""></p>
+<h2 id="prometheus-server">Prometheus server</h2>
+<p>負責蒐集及儲存各 target 的 metrics，也會檢查 alert 規則，觸發後會發 alert 給 alertmanager。</p>
+<h2 id="target">Target</h2>
+<p>要被監控的目標，會以網頁方式將 metrics 以固定格式呈現給 prometheus server 抓取。</p>
+<h2 id="pushgateway">Pushgateway:</h2>
+<p>若有一些 target 不適合以抓取的方式獲得 metrics，例如存活時間很短的 job，prometheus server 還來不及抓就關閉了，則可以將 metrics 推送到 pushgateway，再讓 prometheus server 到 pushgateway 抓取 metrics。</p>
+<h2 id="alertmanager">Alertmanager:</h2>
+<p>prometheus server 會檢查 alert 規則，將觸發的 alert 送到 alertmanager，而 alertmanager 會將 alert 整理後，確定可以發出才會將 alert 送往設定的 receiver。</p>
+<h1 id="concepts">Concepts</h1>
+<h2 id="data-model">Data Model</h2>
+<ul>
+<li>每一條 time series 由 metric name 及一組 labels 來辨別。</li>
+<li>Metric name 必須符合此 regular expression: <code>[a-zA-Z_:][a-zA-Z0-9_:]-</code>。</li>
+<li>Labels 使 Prometheus 可以有多維度的資料，對任何 label 值變動，都會產生一條新的 time series。</li>
+<li>Labels 必須符合此 regular expression: <code>[a-zA-Z_][a-zA-Z0-9_]-</code>。</li>
+<li>開頭是 __ 的 label 是預留給內部使用的。</li>
+<li>Label 值可以使用任何 unicode 字元。</li>
+<li>每一個採樣點是：
+<ul>
+<li>一個 float64 值</li>
+<li>millisecond 等級的 timestamp</li>
+</ul>
+</li>
+<li>Metric name 及 labels 用法
+<ul>
+<li><code>&lt;metric name&gt;{&lt;label name&gt;=&lt;label value&gt;, ...}</code></li>
+<li>Example： <code>api_http_requests_total{method=&quot;POST&quot;, handler=&quot;/messages&quot;}</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="metric-types">Metric Types</h2>
+<p>Prometheus 的 client libraries 提供了四種核心 metric types：</p>
+<ul>
+<li>
+<p>Counter： 一個 counter 是累加的 metric，此數值只會單調遞增。Counter 不應用在會隨時增加或減少的 metric 上，此情形應該使用 gauge。</p>
+</li>
+<li>
+<p>Gauge： 一個 gauge 是表示可以隨時上升或下降的 metric 數值。</p>
+</li>
+<li>
+<p>Histogram： 一個 histogram 會計算 metric 的分佈，分佈的細粒度是可控制的。Histogram 會產生多個 time series，開頭會以 metric name 作為 prefix，例如：</p>
+<ul>
+<li>某個區間的分佈： <code>&lt;basename&gt;_bucket{le=&quot;&lt;upper inclusive bound&gt;&quot;}</code></li>
+<li>所有觀察到的數據總合： <code>&lt;basename&gt;_sum</code></li>
+<li>所有觀察到的數據總數： <code>&lt;basename&gt;_count</code> (i.e. <code>&lt;basename&gt;_bucket{le=&quot;+Inf&quot;}</code>)</li>
+</ul>
+</li>
+<li>
+<p>Summary： 與 histogram 非常相似，差異在於 summary 是在 client side 即時計算百分位數，而 histogram 是在 server side 利用分好的數據計算。Summary 會產生多個 time series，開頭以 metric name 作為 prefix，例如：</p>
+<ul>
+<li>百分位數：<code>&lt;basename&gt;{quantile=&quot;&lt;φ&gt;&quot;}</code></li>
+<li>所有觀察到的數據總合：<code>&lt;basename&gt;_sum</code></li>
+<li>所有觀察到的數據總數：<code>&lt;basename&gt;_count</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="jobs-and-instances">Jobs and Instances</h2>
+<ul>
+<li>在 Prometheus 裡，每一個你能抓取數據的就稱為 instance。</li>
+<li>一群有著相同目的 instances 就稱為 job。</li>
+<li>例如一個 API server job，有四個 replica instances：
+<ul>
+<li>job: api-server
+<ul>
+<li>instance 1: <code>1.2.3.4:5670</code></li>
+<li>instance 2: <code>1.2.3.4:5671</code></li>
+<li>instance 3: <code>5.6.7.8:5670</code></li>
+<li>instance 4: <code>5.6.7.8:5671</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Prometheus 抓取數據時，會自動產生一些 labels：
+<ul>
+<li>job：被抓取的目標是屬於哪個 job。</li>
+<li>instance：被抓取的目標的 URL，例如：<code>&lt;host&gt;:&lt;port&gt;</code></li>
+</ul>
+</li>
+</ul>
+<h1 id="storage">Storage</h1>
+<h2 id="local-storage">Local Storage</h2>
+<ul>
+<li>每兩小時採樣點會被 group 成一個 block，每一個 block 會位在一個資料夾底下</li>
+<li>資料夾裡有一或多個 chunk files，這些 chunk files 包含這兩小時內所有的 time series 採樣點。</li>
+<li>同時也會有 metadata file 及 index file，用來 index metric names 及 labels。</li>
+<li>採用 write-ahead-log (WAL) 機制，應付 server 突然掛掉的情形</li>
+<li>透過 API 刪除 time series 時，被刪除的資料會先存在另外的地方 (tombstone)，而不是馬上把資料刪掉。</li>
+<li>Local storage 不是 clustered 也不是 replicated，所以無法隨意擴充。</li>
+</ul>
+<h2 id="operational-aspects">Operational Aspects</h2>
+<ul>
+<li>Prometheus 透過下列幾個 flags 來設定 local storage，比較重要的有：
+<ul>
+<li><code>--storage.tsdb.path</code>：決定 Prometheus 的 database 位置，預設是 data/。</li>
+<li><code>--storage.tsdb.retention</code>：決定資料要保存多久，預設是 15d。</li>
+</ul>
+</li>
+<li>Prometheus 平均一個採樣點是 1 - 2 個 bytes，所以計算使用量可以簡單用底下公式：<code>needed_disk_space = retention_time_seconds - ingested_samples_per_second - bytes_per_sample</code></li>
+<li>想要把 ingested_samples_per_second 降低，可以減少抓取的 time series 數量或是拉長抓取間隔時間，但透過減少 time series 數量是比較有效率的，因為壓縮效率會更好。</li>
+<li>如果你的 local storage 不幸損壞了，可以試著單獨移除 block 資料夾，這也代表著大約有兩小時的資料無法復原。</li>
+<li>請注意，Prometheus 的 local storage 不保證長期儲存資料。</li>
+</ul>
+<h2 id="remote-storage-integrations">Remote Storage Integrations</h2>
+<p><img src="https://chihkaiyu.github.io/content/images/2019/01/remote_storage.png" alt=""></p>
+<ul>
+<li>Prometheus 的擴展性、耐用性並不好，所以提供了一些介面讓你可以與外部長期儲存系統整合。</li>
+<li>Prometheus 與外部儲存空間整合利用底下兩種方式 (如上圖)：
+<ul>
+<li>Prometheus can write samples that it ingests to a remote URL in a standardized format.</li>
+<li>Prometheus can read (back) sample data from a remote URL in a standardized format.</li>
+</ul>
+</li>
+<li>讀寫的 protocol 都是用 snappy 壓縮，再透過 HTTP 傳輸。</li>
+<li>這個 protocol 並不是很穩定，未來可能在 HTTP/2 上用 gRPC。</li>
+</ul>
+<h1 id="query">Query</h1>
+<h2 id="expression-data-types">Expression Data Types</h2>
+<ul>
+<li>Instant vector: 一組時間序列，每條時間序列只含最新的數據。</li>
+<li>Range vector: 一組時間序列，每條時間序列含有過去 x 時間的數據。</li>
+<li>Scalar: 一個浮點數</li>
+<li>String: 一個字串值，目前並沒有使用</li>
+</ul>
+<h2 id="time-series-selectors">Time Series Selectors</h2>
+<h3 id="instant-vector-selectors">Instant vector selectors</h3>
+<p>選取一組時間序列，並回傳最新的數據，可以加上 label 來過濾特定的時間序列。例如：</p>
+<ul>
+<li><code>http_requests_total</code> 所有在這條時間序列的 metrics 都會被回傳</li>
+<li><code>http_requests_total{job=&quot;prometheus&quot;,group=&quot;canary&quot;}</code> 只會回傳有這兩個 labels 的數據</li>
+</ul>
+<p>可以搭配等式來找出吻合的 label 或反向不吻合的 label，例如：</p>
+<ul>
+<li><code>=</code>：過濾出完全符合字串的 labels</li>
+<li><code>!=</code>：過濾出不符合字串的 labels</li>
+<li><code>=~</code>：過濾出符合 regex 的 labels (Prometheus 採用 <a href="https://github.com/google/re2/wiki/Syntax">RE2 syntax</a>)</li>
+<li><code>!~</code>：過濾出不符合 regex 的 labels</li>
+</ul>
+<p>底下舉例上述四種用法：</p>
+<ul>
+<li><code>http_requests_total{job=&quot;web&quot;,env--_=_--&quot;production&quot;}</code></li>
+<li><code>http_requests_total{job=&quot;web&quot;,status_code--_!=_--&quot;200&quot;}</code></li>
+<li><code>http_requests_total{job=&quot;web&quot;,status_code--=~--&quot;200|304&quot;}</code></li>
+<li><code>http_requests_total{job=&quot;web&quot;,path--_!~_--&quot;/ec/x/.-&quot;}</code></li>
+</ul>
+<h3 id="range-vector-selectors">Range vector selectors</h3>
+<p>與 instant vector selectors 很類似，只不過 range vector selectors 會回傳指定時間長度的數據。例如：</p>
+<ul>
+<li><code>http_requests_total{job=&quot;web&quot;}[5m]</code></li>
+<li><code>http_requests_total{job=&quot;web&quot;}[1h]</code></li>
+</ul>
+<p>時間長度以一個數字加上一個單位組成，例如：</p>
+<ul>
+<li><code>s</code>：秒</li>
+<li><code>m</code>：分</li>
+<li><code>h</code>：時</li>
+<li><code>d</code>：日</li>
+<li><code>w</code>：週</li>
+<li><code>y</code>：年</li>
+</ul>
+<h3 id="offset-modifier">Offset modifier</h3>
+<p>Offset modifier 會根據目前 query 的時間往前位移指定時間，例如：</p>
+<ul>
+<li><code>http_requests_total offset 5m</code> 會回傳 5 分鐘前的數據</li>
+<li><code>rate(http_requests_total[5m] offset 1w)</code> 會回傳一星期前 5 分鐘的速率</li>
+</ul>
+<p>請注意 offset modifier 需要緊接在 selector 後面，例如：</p>
+<ul>
+<li><code>sum(http_requests_total{method=&quot;GET&quot;} offset 5m)  GOOD</code></li>
+<li><code>sum(http_requests_total{method=&quot;GET&quot;}) offset 5m  INVALID</code></li>
+</ul>
+<h2 id="binary-operators">Binary Operators</h2>
+<h3 id="arithmetic-binary-operators">Arithmetic binary operators</h3>
+<p>二元算術運算有下列幾個：</p>
+<ul>
+<li><code>+</code>：加法</li>
+<li><code>-</code>：減法</li>
+<li><code>-</code>：乘法</li>
+<li><code>/</code>：除法</li>
+<li><code>%</code>：餘數</li>
+<li><code>^</code>：指數</li>
+</ul>
+<p>二元算術運算可以運算在下列 data type：</p>
+<ul>
+<li><code>scalar/scalar</code> =&gt; <code>scalar</code></li>
+<li><code>vector/scalar</code> =&gt; <code>vector</code></li>
+<li><code>vector/vector</code> =&gt; <code>vector</code></li>
+</ul>
+<h3 id="comparison-binary-operators">Comparison binary operators</h3>
+<p>二元比較運算有下列幾個：</p>
+<ul>
+<li><code>==</code>：等於</li>
+<li><code>!=</code>：不等於</li>
+<li><code>&gt;</code>：大於</li>
+<li><code>&lt;</code>：小於</li>
+<li><code>&gt;=</code>：大於等於</li>
+<li><code>&lt;=</code>：小於等於</li>
+</ul>
+<p>二元比較運算可以運算在下列 data type：</p>
+<ul>
+<li><code>scalar/scalar</code> =&gt; bool 0 (false) or 1 (true)</li>
+<li><code>vector/scalar</code></li>
+<li><code>vector/vector</code></li>
+</ul>
+<h3 id="logicalset-binary-operators">Logical/set binary operators</h3>
+<p>邏輯/集合二元運算有下列幾個：</p>
+<ul>
+<li><code>and</code>：交集</li>
+<li><code>or</code>：聯集</li>
+<li><code>unless</code>：差集</li>
+</ul>
+<p>邏輯/集合二元運算只能用在 instant vector 上，例如底下運算：</p>
+<ul>
+<li>vector1 <code>and</code> vector2 會回傳在 vector1 也在 vector2 的元素並且 label sets 要一樣，metric 名稱及數據會從左手邊的 vector 獲得</li>
+<li>vector1 <code>or</code> vector2 會回傳所有在 vector1 的元素 (label sets + values)，再加上所有不符合 vector1 label sets 的 vector2 元素</li>
+<li>vector1 <code>unless</code> vector2 回傳所有在 vector1 的元素，但符合 vector2 label sets 的元素會被丟掉</li>
+</ul>
+<h2 id="vector-matching">Vector Matching</h2>
+<h3 id="one-to-one-vector-matches">One-to-one vector matches</h3>
+<p>如果有完全一模一樣的 set of labels 跟相對應的值，則稱這兩個 entries 相符，底下兩個 keyword 可以過濾指定 labels：</p>
+<ul>
+<li><code>ignoring</code>：指定忽略哪些相符 labels</li>
+<li><code>on</code>：只考濾指定的 labels</li>
+</ul>
+<p>使用方法：</p>
+<ul>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; ignoring(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; on(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+</ul>
+<p>Example input:</p>
+<ul>
+<li><code>method_code:http_errors:rate5m{method=&quot;get&quot;, code=&quot;500&quot;}  24</code></li>
+<li><code>method_code:http_errors:rate5m{method=&quot;get&quot;, code=&quot;404&quot;}  30</code></li>
+<li><code>method_code:http_errors:rate5m{method=&quot;put&quot;, code=&quot;501&quot;}  3</code></li>
+<li><code>method_code:http_errors:rate5m{method=&quot;post&quot;, code=&quot;500&quot;} 6</code></li>
+<li><code>method_code:http_errors:rate5m{method=&quot;post&quot;, code=&quot;404&quot;} 21</code></li>
+<li><code>method:http_requests:rate5m{method=&quot;get&quot;}  600</code></li>
+<li><code>method:http_requests:rate5m{method=&quot;del&quot;}  34</code></li>
+<li><code>method:http_requests:rate5m{method=&quot;post&quot;} 120</code></li>
+</ul>
+<p>Example query:</p>
+<ul>
+<li><code>method_code:http_errors:rate5m{code=&quot;500&quot;} / ignoring(code) method:http_requests:rate5m</code></li>
+</ul>
+<p>如果不使用 ignoring(code) 則不會有任何結果，因為沒有完全一樣的 set of labels。put 跟 del 沒有相符的 label 所以不會出現在結果裡。</p>
+<p>Result:</p>
+<ul>
+<li><code>{method=&quot;get&quot;}  0.04            //  24 / 600</code></li>
+<li><code>{method=&quot;post&quot;} 0.05            //   6 / 120</code></li>
+</ul>
+<h3 id="many-to-one-and-one-to-many-vector-matches">Many-to-one and one-to-many vector matches</h3>
+<p>使用方法：</p>
+<ul>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; ignoring(&lt;label list&gt;) group_left(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; ignoring(&lt;label list&gt;) group_right(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; on(&lt;label list&gt;) group_left(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+<li><code>&lt;vector expr&gt; &lt;bin-op&gt; on(&lt;label list&gt;) group_right(&lt;label list&gt;) &lt;vector expr&gt;</code></li>
+</ul>
+<p>Example query:</p>
+<ul>
+<li><code>method_code:http_errors:rate5m / ignoring(code) group_left method:http_requests:rate5m</code></li>
+</ul>
+<p>Result:</p>
+<ul>
+<li><code>{method=&quot;get&quot;, code=&quot;500&quot;}  0.04            //  24 / 600</code></li>
+<li><code>{method=&quot;get&quot;, code=&quot;404&quot;}  0.05            //  30 / 600</code></li>
+<li><code>{method=&quot;post&quot;, code=&quot;500&quot;} 0.05            //   6 / 120</code></li>
+<li><code>{method=&quot;post&quot;, code=&quot;404&quot;} 0.175           //  21 / 120</code></li>
+</ul>
+<h2 id="aggregation-operators">Aggregation Operators</h2>
+<p>Prometheus 內建下列 aggregation 操作：</p>
+<ul>
+<li><code>sum</code>：所有維度總和</li>
+<li><code>min</code>：找出所有維度裡最小值</li>
+<li><code>max</code>：找出所有維度裡最大值</li>
+<li><code>avg</code>：所有維度平均值</li>
+<li><code>stddev</code>：所有維度標準差</li>
+<li><code>stdvar</code>：所有維度標準變異量</li>
+<li><code>count</code>：計算該 vector 裡有多少元素數量</li>
+<li><code>count_values</code>：計算有多少元素是有相同值</li>
+<li><code>bottomk</code>：從 sample value 找出最小 k 個元素</li>
+<li><code>topk</code>：從 sample value 找出最大 k 個元素</li>
+<li><code>quantile</code>：從所有維度計算 φ-quantile (0 ≤ φ ≤ 1)</li>
+</ul>
+<p>這些 aggregation 操作可以透過 without 或是 by 來指定要使用的 labels，使用方法為：</p>
+<ul>
+<li><code>&lt;aggr-op&gt;([parameter,] &lt;vector expression&gt;) [without|by (&lt;label list&gt;)]</code></li>
+</ul>
+<p>例如：<code>sum(http_requests_errors) by (code)</code></p>
+<p>parameter 只有下列操作需要：<code>count_values</code>、<code>quantile</code>、<code>topk</code>、<code>bottomk</code></p>
+<p>Example:</p>
+<ul>
+<li>如果有一 metric <code>http_requests_total</code>，他有三個 lables 為 <code>application</code>、<code>instance</code> 及 <code>group</code>，則我們可以分別計算 application 及 group 的 HTTP requests 總和，下列兩個 query 是等價的：
+<ul>
+<li><code>sum(http_requests_total) without (instance)</code></li>
+<li><code>sum(http_requests_total) by (application, group)</code></li>
+</ul>
+</li>
+<li>如果我們只在意所有的 HTTP requests 總和：<code>sum(http_requests_total)</code></li>
+<li>想計算不同版本各有多少 binaries 在執行：<code>count_values(&quot;version&quot;, build_version)</code></li>
+<li>想計算所有機器裡收到 HTTP requests 的前 5 名：<code>topk(5, http_requests_total)</code></li>
+</ul>
+<h2 id="binary-operator-precedence">Binary Operator Precedence</h2>
+<p>下列為 Prometheus 二元運算的優先權，由高到低為：</p>
+<ol>
+<li><code>^</code></li>
+<li><code>-</code>, <code>/</code>, <code>%</code></li>
+<li><code>+</code>, <code>-</code></li>
+<li><code>==</code>, <code>!=</code>, <code>&lt;=</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&gt;</code></li>
+<li><code>and</code>, <code>unless</code></li>
+<li><code>or</code></li>
+</ol>
+<p>有相同優先權的運算子則為左結合律，然而 ^ 則是右結合律，例如：</p>
+<ul>
+<li><code>2 - 3 % 2</code> 則等價於 <code>(2 - 3) % 2</code></li>
+<li><code>2 ^ 3 ^ 2</code> 則等價於 <code>2 ^ (3 ^ 2)</code></li>
+</ul>
+<h2 id="functions">Functions</h2>
+<p><a href="https://prometheus.io/docs/prometheus/latest/querying/functions/">Prometheus functions 列表</a></p>
+<p>由於數量過多，儘說明下列兩項：</p>
+<ul>
+<li>
+<p><code>rate()</code></p>
+<ul>
+<li><code>rate(v range-vector)</code> 計算每秒<code>平均</code>速率。單調函數若有中斷 (例如 counter resets) 則會自動調整。此外，若抓取數據時有失誤，也會自動對齊抓取的週期。</li>
+<li>過去 5 分鐘 HTTP requests 每秒的速率：<code>rate(http_requests_total{job=&quot;api-server&quot;}[5m])</code></li>
+<li>當結合 <code>rate()</code> 與 aggregation 操作使用時，必須先計算 <code>rate()</code> 再使用 aggregation，否則當 counter 被 resets 時，<code>rate()</code> 無法偵測到。</li>
+</ul>
+</li>
+<li>
+<p><code>irate()</code></p>
+<ul>
+<li><code>irate(v range-vector)</code> 計算每秒<code>即時</code>速率。</li>
+</ul>
+</li>
+</ul>
+<h1 id="alerting">Alerting</h1>
+<h2 id="grouping">Grouping</h2>
+<p>Grouping 將類似的警告分類在一起，並且只送出一個警告訊息。在許多系統同時出問題時非常有用。</p>
+<p>例如：某個服務裡有一半的 instances 無法連到資料庫時，同時會有許多警告送到 Altermanager。使用者希望只收到一則警告訊息，卻同時還能看出是哪幾台 instances 受到影響，此時便可以設定 Alertmanager 將這些警告訊息根據他們的 alertname 及 cluster group 在一起。</p>
+<h2 id="inhibition">Inhibition</h2>
+<p>Inhibition 的概念是：如果有特定警告已經發出了，將有其他的警告會被禁止發出。</p>
+<p>例如：有警告通知有一整個 cluster 無法連接。Alertmanager 可以設定禁止其他與此 cluster 相關的警告持續發出。</p>
+<h2 id="silences">Silences</h2>
+<p>Silences 就是將警告關閉一段時間。silence 透過 matchers 來判斷警告是否要發出。當有一個警告送來時，會檢查是否符合所有的檢查式，或是 regular expression。若符合則不會發出任何警告。</p>
+<h2 id="configuration">Configuration</h2>
+<ul>
+<li><a href="https://prometheus.io/webtools/alerting/routing-tree-editor/">Routing tree editor</a></li>
+</ul>
+<pre><code># The root route with all parameters, which are inherited by the child
+# routes if they are not overwritten.
+route:
+  receiver: 'default-receiver'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  group_by: [cluster, alertname]
+  # All alerts that do not match the following child routes
+  # will remain at the root node and be dispatched to 'default-receiver'.
+  routes:
+  # All alerts with service=mysql or service=cassandra
+  # are dispatched to the database pager.
+  - receiver: 'database-pager'
+    group_wait: 10s
+    match_re:
+      service: mysql|cassandra
+  # All alerts with the team=frontend label match this sub-route.
+  # They are grouped by product and environment rather than cluster
+  # and alertname.
+  - receiver: 'frontend-pager'
+    group_by: [product, environment]
+    match:
+      team: frontend
+</code></pre><h2 id="alerting-flow">Alerting Flow</h2>
+<ol>
+<li>
+<p>接收到Alert，根据labels判断属于哪些Route（可存在多个Route，一个Route有多个Group，一个Group有多个Alert）</p>
+</li>
+<li>
+<p>将Alert分配到Group中，没有则新建Group</p>
+</li>
+<li>
+<p>新的Group等待group_wait指定的时间（等待时可能收到同一Group的Alert），根据resolve_timeout判断Alert是否解决，然后发送通知</p>
+</li>
+<li>
+<p>已有的Group等待group_interval指定的时间，判断Alert是否解决，当上次发送通知到现在的间隔大于repeat_interval或者Group有更新时会发送通知</p>
+</li>
+</ol>
+<p>Example: given the service never up</p>
+<p><img src="https://chihkaiyu.github.io/content/images/2019/01/alert_flow.png" alt=""></p>
+<h1 id="best-practices">Best Practices</h1>
+<h2 id="metric-and-label-naming">Metric and Label Naming</h2>
+<h3 id="metric-names">Metric Names</h3>
+<ul>
+<li>應該要有一個字的 prefix，指出該 metrics 是屬於哪個應用的，例如：
+<ul>
+<li><code>prometheus</code>_notifications_total 指出是 Prometheus server</li>
+<li><code>process</code>_cpu_seconds_total 指出是由許多 client libraries export 出來的</li>
+<li><code>http</code>_request_duration_seconds 指出是全部的 HTTP requests</li>
+</ul>
+</li>
+<li>一定只能有一個單位，也就是不要混用 seconds 跟 milliseconds，或是 seconds 跟 bytes。</li>
+<li>應該用基本單位，也就是用 seconds, bytes, meters，不要用 milliseconds, megebytes (見下方 base units)。</li>
+<li>應該要有複數形式的單位作為 suffix，若是累加請用 total，例如：
+<ul>
+<li>http_request_duration_<code>seconds</code></li>
+<li>node_memory_usage_<code>bytes</code></li>
+<li>http_requests_<code>total</code> (沒有單位的累加)</li>
+<li>process_cpu_<code>seconds_total</code> (有單位的累加)</li>
+</ul>
+</li>
+</ul>
+<h3 id="labels">Labels</h3>
+<ul>
+<li>使用 label 來區分同一個 metric 中不同特性：
+<ul>
+<li><code>api_http_requests_total</code> 區分不同 request types：<code>type=&quot;create|update|delete&quot;</code></li>
+<li><code>api_request_duration_seconds</code> 區分不同 reqeust stages：<code>stage=&quot;extract|transform|load&quot;</code></li>
+</ul>
+</li>
+<li>不要把 label 名稱放到 metrics 裡，一來沒有用，而且在 aggregate 時會混亂。</li>
+<li>記住任何唯一的 key-value label pairs 都會產生一條新的 time series，這會讓儲存空間迅速成長。</li>
+</ul>
+<h2 id="instrumentation">Instrumentation</h2>
+<p>為了監控的話，服務可大致上分為三類：online-serving, offline-processing, batch jobs。
+這三類會有一些交集，但每個服務會傾向落在某一類上。</p>
+<h3 id="online-serving-systems">Online-serving Systems</h3>
+<ul>
+<li>線上服務系統是被期待要能馬上回應的，像是 database、HTTP 請求。</li>
+<li>主要 metrics 有：
+<ul>
+<li>number of performed queries</li>
+<li>errors</li>
+<li>latency</li>
+<li>number of in-progress requests</li>
+</ul>
+</li>
+<li>線上服務系統需要監控 client 及 server，如果兩邊的行為不太一致，那在找問題時會非常有用。</li>
+<li>如果 client 有很多個，那就無法由服務本身監控，得依賴他們自己的數據。</li>
+<li>在計算 queries 數量時，要統一開始就計數，還是結束才計數。結束後才計數是比較建議的，因為同時會累加 error 及 latency。</li>
+</ul>
+<h3 id="offline-processing">Offline Processing</h3>
+<ul>
+<li>Offline processing 可能會分成多個階段處理。</li>
+<li>追蹤每一階段進來的東西、有多少正在處理、最後處理完的時間、有多少東西送出去。</li>
+<li>如果這個系統卡住的話，知道最後一個處理完的時間是很有用的，但這個資訊是非常局部的。</li>
+<li>較好的方法是送出一個假的東西，讓他帶著 timestamp 通過整個系統。</li>
+<li>每一個階段可以回報他們最後看到心跳的 timestamp。</li>
+</ul>
+<h3 id="batch-jobs">Batch Jobs</h3>
+<ul>
+<li>Batch jobs 與 offline-processing 的界線很難分清楚。</li>
+<li>主要關心的 metrics 有：
+<ul>
+<li>最後成功的時間</li>
+<li>每一個主要階段花了多久</li>
+<li>總共花的時間</li>
+<li>最後完成的 job 時間 (成功或失敗都算)</li>
+</ul>
+</li>
+<li>需要花幾分鐘跑的 batch jobs 很適合用拉取的方式監控，同時可以監控其他資源，在 job 開始變慢時是很有用的資訊。</li>
+<li>對於執行頻率很高的 job (例如 15 分鐘內)，可以考慮將之轉成 daemons 的形式，並用 offline-processing 來處理 jobs。</li>
+</ul>
+<h3 id="subsystems">Subsystems</h3>
+<ul>
+<li>
+<p>Libraries</p>
+<ul>
+<li>Libraries 應該提供偵測，使用者無需設置。</li>
+<li>如果會 library 會使用外部資源 (network, disk, IPC)，至少要監控 query count, errors, latency。</li>
+</ul>
+</li>
+<li>
+<p>Logging</p>
+<ul>
+<li>用 counter 計算 logging code 的行數，如果發現有趣的 log message，可能會想知道這有多常出現及持續多久。</li>
+<li>如果有非常接近的 log message (branches of if, switch)，用單一個 counter 紀錄他們是合理的。</li>
+<li>分別紀錄有幾行 info/error/warning 也會很有用。</li>
+</ul>
+</li>
+<li>
+<p>Failures</p>
+<ul>
+<li>每一次發生 failure 時，相對應的 counter 就要增加。</li>
+<li>不像 logging，error 發生時可能要浮到更上層的 error counter。</li>
+<li>當回報 failures 時，應該要一起回報嘗試的次數，這讓 failure ratio 比較容易計算。</li>
+</ul>
+</li>
+<li>
+<p>Threadpools<br>
+主要 metrics 有：</p>
+<ul>
+<li>number of queued requests</li>
+<li>number of threads in use</li>
+<li>total number of threads</li>
+<li>number of tasks processed</li>
+<li>how long they took</li>
+<li>how long things were waiting in the queue</li>
+</ul>
+</li>
+<li>
+<p>Caches<br>
+主要 metrics 有：</p>
+<ul>
+<li>total queries</li>
+<li>hits</li>
+<li>overall latency</li>
+<li>query count</li>
+<li>erros</li>
+<li>latency of whatever online-serving system the cache is in front of</li>
+</ul>
+</li>
+</ul>
+<h3 id="things-to-watch-out-for">Things to Watch Out For</h3>
+<ul>
+<li>Use labels
+<ul>
+<li>當你想 add/average/sum 多條 metrics 時，他們應該是一條 metric 帶著 labels，而不是多條 metrics。</li>
+<li>例如：與其使用 <code>http_responses_500_total</code> 及 <code>http_responses_403_total</code>，你應該使用 <code>http_responses_total</code> 並用 code 當作 label 來區分 HTTP response code。</li>
+</ul>
+</li>
+<li>Do not overuse labels
+<ul>
+<li>每一組 labelset 都是一條新的 time series，都會造成 RAM, CPU, disk, network 的負擔。</li>
+<li>通常我們會建議把 cardinality 控制在 10 以下。</li>
+<li>大部份的 metrics 應該要沒有 labels。</li>
+<li>如果有 metric 的 cardinality 超過 100 或是有潛力超過 100，建議試著減少或是乾脆從 monitoring 中移走，移到更適合的地方。</li>
+<li>以 node exporter 為例，每一個 node 會產生 10 幾條 time series，如果你有 10,000 個 nodes，你最終會有 100,000 條 time series，但這對 Prometheus 來說是可以掌控的。</li>
+<li>如果你不確定，從完全沒有 labels 開始，再隨著需求增加。</li>
+</ul>
+</li>
+<li>Counter vs. gauge
+<ul>
+<li>如果有個數值會減少，那就用 gauge。</li>
+<li>Counter 只能往上增加，搭配 rate() 可以算出每秒速率。</li>
+<li>Gauge 可以往上往下，這像是在 snapshot 狀態，千萬不要用 rate() 算一個 gauge。</li>
+</ul>
+</li>
+<li>Timestamps, not time since
+<ul>
+<li>If you want to track the amount of time since something happened, export the Unix timestamp at which it happened - not the time since it happened.</li>
+<li>With the timestamp exported, you can use the expression time() - my_timestamp_metric to calculate the time since the event, removing the need for update logic and protecting you against the update logic getting stuck.</li>
+</ul>
+</li>
+<li>Inner loops
+<ul>
+<li>監控帶來的好處遠大於所花的資源。</li>
+<li>如果你的系統真的對效能很要求，限制你更新 metrics 的數量，並且避免 labels。</li>
+<li>一個 Java counter 大概花 <a href="https://github.com/prometheus/client_java/blob/master/benchmark/README.md">12 - 17 ns</a> 在更新，其他語言也會有差不多的效能。</li>
+</ul>
+</li>
+<li>Avoid missing metrics
+<ul>
+<li>當 time series 消失時，會很難處理，通常簡單回報 0 是個方法 (如果回 0 會造成誤會，就回報 NaN )。</li>
+<li>大部份的 Prometheus client libraries 都會自動回 0。</li>
+</ul>
+</li>
+</ul>
+<h2 id="histograms-and-summaries">Histograms and Summaries</h2>
+<h3 id="library-support">Library support</h3>
+<ul>
+<li>Golang, Java, Python, Ruby 都支援 histograms 及 summaries。</li>
+</ul>
+<p><a href="https://en.wikipedia.org/wiki/Apdex">Apdex score</a></p>
+<ul>
+<li>如果你的 SLA 是 95% requests 都要在 300ms 內，你可以用底下 expression 來設定 alert：</li>
+</ul>
+<pre><code>sum(rate(http_request_duration_seconds_bucket{le=&quot;0.3&quot;}[5m])) by (job)
+/
+sum(rate(http_request_duration_seconds_count[5m])) by (job)
+</code></pre><ul>
+<li>也可以透過 Apdex score 來計算，除了目標外，會再設定一個可忍受的範圍 (通常是目標的 4 倍)：</li>
+</ul>
+<pre><code>(sum(rate(http_request_duration_seconds_bucket{le=&quot;0.3&quot;}[5m])) by (job)
++
+sum(rate(http_request_duration_seconds_bucket{le=&quot;1.2&quot;}[5m])) by (job))
+/ 2 / sum(rate(http_request_duration_seconds_count[5m])) by (job)
+</code></pre><h3 id="quantiles">Quantiles</h3>
+<ul>
+<li>你可以用 summaries 及 histograms 來計算百分位數。</li>
+<li>Summaries 及 histograms 最主要的差別是：
+<ul>
+<li>Summaries 在 client side 即時計算百分位數</li>
+<li>Histograms 是在 server side 用 histogram_qualtile() function 從分好的 observation counts 計算。</li>
+</ul>
+</li>
+<li><a href="https://prometheus.io/docs/practices/histograms/#quantiles">此表列出兩者差異</a></li>
+<li>如果服務有多個 instance，不能 aggregate 預先計算好的百分位數，這在統計上是沒有意義的，例如：<code>avg(http_request_duration_seconds{quantile=&quot;0.95&quot;}) // BAD!</code></li>
+<li>改為利用分佈圖就可以了，例如：<code>histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) // GOOD.</code></li>
+<li>用上述方法還有一個好處是，如果 SLA 條件改了，你要看第 90 百分位數或是要看過去 10 分鐘，你只需要改上面的 expression，不需要重新設定 client。</li>
+</ul>
+<h3 id="errors-of-quantile-estimation">Errors of quantile estimation</h3>
+<ul>
+<li>總結：
+<ul>
+<li>如果你用 summary，你藉由控制百分位數的維度來控制誤差。</li>
+<li>如果你用 histogram，你藉由控制觀察結果(選擇適當的 bucket) 來控制誤差。</li>
+<li>較廣的分佈，小小的改變百分位數在觀察結果就會有很大的誤差。</li>
+<li>較集中的分佈，小小的區間裡，就會涵蓋大區間的百分位數。</li>
+</ul>
+</li>
+<li>建議：
+<ul>
+<li>如果你需要 aggregate 就使用 histograms。</li>
+<li>否則：
+<ul>
+<li>如果你知道數值大概會怎麼分佈，就使用 histogram。</li>
+<li>如果不管數值會怎麼分佈，你就是需要精準的百分位數，就使用 summary。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>不論是在 client-side 或是在 server-side 計算的百分位數都是預估的。</li>
+</ul>
+<p>TL; DR</p>
+<ul>
+<li>
+<p>假設設定一個 histogram，其中 buckets 是分成：</p>
+<ul>
+<li><code>0 - 100ms ({le=&quot;0.1&quot;})</code></li>
+<li><code>100 - 200ms ({le=&quot;0.2&quot;})</code></li>
+<li><code>200 - 300ms ({le=&quot;0.3&quot;})</code></li>
+<li><code>300 - 450ms ({le=&quot;0.45&quot;})</code></li>
+</ul>
+</li>
+<li>
+<p>下面以上述的設定舉幾個範例說明：</p>
+<ul>
+<li>假設大部份的 request durations 都在 220ms，幾乎所有觀察結果甚至是第 95 百分位數都會落在標著 <code>{le=&quot;0.3&quot;}</code> 的 bucket，也就是 200ms 到 300ms 的區間。Histogram 的實作保證真實的第 95 百分位數會在 200ms - 300ms 的某個地方，但為了回傳單一數值而不是整個區間，Prometheus 會做線性內插，以上面的例子會回傳 295ms，而事實上第 95 百分位數是 220ms，這可能會讓你誤會。</li>
+<li>假設 backend 現在要固定多花 100ms 處理，現在所有 request duration 會落在 320ms，而第 95 百分位數根據計算會是 442.5ms，雖然真正的值是 320ms。雖然事實上你只超出了你的 SLA 一點點，但根據計算的結果看起來卻是非常糟。</li>
+</ul>
+</li>
+<li>
+<p>Summary 在這方面倒是沒有計算問題，但如果你需要 aggregate 數個 instances 的觀察結果，就沒辦法了使用 summary 了。</p>
+</li>
+<li>
+<p>如果你 bucket 的邊界選的夠好，即使像上面那種不自然的分佈也可以分計算出真實的百分位數。</p>
+</li>
+<li>
+<p>假設我們的 request durations 分佈是 90% 落在 150ms，剩下 10% 平均的分佈在 150ms - 450ms 之間，這時候第 95 百分位數正好是 300ms。</p>
+</li>
+<li>
+<p>Summary 的百分位數會給定一個誤差值，例如我們可能會設定 0.95±0.01，然後這時候你得到的結果會是第 94 至 第 96 百分位數的結果，這可能無法讓你很清楚的判斷是否符合 SLA。</p>
+</li>
+</ul>
+<h2 id="alerting-1">Alerting</h2>
+<ul>
+<li>
+<p>推薦閱讀 <a href="https://docs.google.com/a/boxever.com/document/d/199PqyG3UsyXlwieHaqbGiWVa8eMWi8zzAn0YfcApr8Q/edit">My Philosophy on Alerting</a>。</p>
+</li>
+<li>
+<p>總結：</p>
+<ul>
+<li>保持 alert 簡單</li>
+<li>對症狀 alert</li>
+<li>有個好的 consoles 去找出 root causes</li>
+<li>如果無法做什麼應對，避免找人救火</li>
+<li>Alert 會影響 end-user 的東西</li>
+</ul>
+</li>
+</ul>
+<p>TL; DR</p>
+<h3 id="online-serving-systems-1">Online serving systems</h3>
+<ul>
+<li>對高 latency 及 error rate 升高時發出 alert。</li>
+<li>只要 user 的 latency 還沒有很高，就不需要發出 page。</li>
+<li>只對 user 看的到的 error 發出 page。</li>
+<li>如果有些是 user 看不到，但非常嚴重 (像是你的錢正不斷損失) 也可以發出 page。</li>
+</ul>
+<h3 id="offline-processing-1">Offline processing</h3>
+<ul>
+<li>檢查資料通過系統需要多久時間，當足夠影響 user 時就發出 page。</li>
+</ul>
+<h3 id="batch-jobs-1">Batch jobs</h3>
+<ul>
+<li>當最近的 batch job 都沒有成功，而且會讓 user 看到問題，就發出 page。</li>
+<li>Threshold 可以設在跑兩輪 batch job 的時間，例如每 4 小時跑一次，跑一次 1 小時，10 小時就會是個合理的 threshold。</li>
+<li>如果無法忍受任何一次的失敗，那應該更頻繁的執行 batch job，不應該有單一次失敗就需要人為介入調查。</li>
+</ul>
+<h3 id="capacity">Capacity</h3>
+<ul>
+<li>這不會馬上對 user 造成影響，所以通常需要人為介入調查，來避免近期的未來將資源用光。</li>
+</ul>
+<h3 id="metamonitoring">Metamonitoring</h3>
+<ul>
+<li>確保監控基礎建設是正常運作的，所以 eat your own dog food。</li>
+<li>針對症狀發出 alert 而不是 root cause，這可以減少 noise。</li>
+</ul>
+<h2 id="when-to-use-the-pushgateway">When to Use The Pushgateway</h2>
+<ul>
+<li>建議只在特定幾種情形下使用 Pushgateway，底下列出使用 Pushgateway 的缺點：
+<ul>
+<li>當有多個 instances 是透過 Pushgateway 時，Pushgateway 就變成單點且可能是瓶頸。</li>
+<li>喪失 Prometheus 自動 healthy checking 的機制，在每次抓取會更新 up metric 的狀態。</li>
+<li>Pushgateway 永遠不會丟掉已經收到的 time series，Pushgateway 會一直 expose 給 Prometheus 直接有人手動刪除他。</li>
+</ul>
+</li>
+<li>上述最後一點在有多個 instances 情況下更相關，多個 instances 的 metrics 會一直保留在 Pushgateway 裡，即使原本的 instance 已經改名或移除了。</li>
+<li>對比 Prometheus 用抓取的方式監控，當有個 instance 消失，他的 metrics 也跟著自動消失。</li>
+<li>通常只有 service-level 層級的 job 才會使用 Pushgateway，例如有個 job 不包含機器或 instance label，這會減少管理 Pushgateway 上面舊的 metrics 的負擔。</li>
+</ul>
+<h1 id="comparison-to-alternatives">Comparison to Alternatives</h1>
+<h2 id="vs-graphite">vs. Graphite</h2>
+<ul>
+<li>Prometheus offers a richer data model and query language</li>
+<li>If you watt a clustered solution that can hold historical data long term, Graphite may be a better choice</li>
+</ul>
+<h2 id="vs-influxdb">vs. InfluxDB</h2>
+<h3 id="there-are-many-similarities-between-the-systems">There are many similarities between the systems:</h3>
+<ul>
+<li>labels</li>
+<li>data compression</li>
+<li>extensive integrations</li>
+<li>hooks</li>
+</ul>
+<h3 id="where-influxdb-is-better">Where InfluxDB is better:</h3>
+<ul>
+<li>If you&rsquo;re doing event logging.</li>
+<li>Commercial option offers clustering for InfluxDB, which is also better for long term data storage.</li>
+<li>Eventually consistent view of data between replicas.</li>
+</ul>
+<h3 id="where-prometheus-is-better">Where Prometheus is better:</h3>
+<ul>
+<li>If you&rsquo;re primarily doing metrics.</li>
+<li>More powerful query language, alerting, and notification functionality.</li>
+<li>Higher availability and uptime for graphing and alerting.</li>
+</ul>
+<h2 id="vs-opentsdb">vs. OpenTSDB</h2>
+<ul>
+<li>Prometheus offers a richer data model and query language</li>
+</ul>
+<h2 id="vs-nagios">vs. Nagios</h2>
+<ul>
+<li>Nagios is suitable for basic monitoring of small and/or static systems there blackbox probing is sufficient</li>
+</ul>
+<h1 id="faq">FAQ</h1>
+<h2 id="what-dose-prometheus-fit-and-not">What Dose Prometheus Fit and Not</h2>
+<h3 id="fit">Fit</h3>
+<ul>
+<li>For recording any purely numeric time series</li>
+<li>Support for multi-dimensional data</li>
+<li>Querying is a particular strength</li>
+<li>Designed for reliability</li>
+</ul>
+<h3 id="not-fit">Not fit</h3>
+<ul>
+<li>If you need 100% accuracy, such as for per-request billing</li>
+</ul>
+<h2 id="can-prometheus-be-made-highly-available">Can Prometheus be made highly available?</h2>
+<p>Yes, run identical Prometheus servers on two or more separate machines. Identical alerts will be deduplicated by the <a href="https://github.com/prometheus/alertmanager">Alertmanager</a>.</p>
+<p>For <a href="https://github.com/prometheus/alertmanager#high-availability">high availability of the Alertmanager</a>, you can run multiple instances in a <a href="https://github.com/weaveworks/mesh">Mesh cluster</a> and configure the Prometheus servers to send notifications to each of them.</p>
+<h2 id="how-to-feed-logs-into-prometheus">How to feed logs into Prometheus?</h2>
+<ul>
+<li>
+<p>Short answer: Don&rsquo;t! Use something like the <a href="https://www.elastic.co/products">ELK stack</a> instead.</p>
+</li>
+<li>
+<p>Longer answer: Prometheus is a system to collect and process metrics, not an event logging system. The Raintank blog post <a href="https://blog.raintank.io/logs-and-metrics-and-graphs-oh-my/">Logs and Metrics and Graphs, Oh My!</a> provides more details about the differences between logs and metrics.</p>
+</li>
+</ul>
+<p>If you want to extract Prometheus metrics from application logs, Google&rsquo;s <a href="https://github.com/google/mtail">mtail</a> might be helpful.</p>
+<h2 id="can-i-send-alerts">Can I send alerts</h2>
+<p>Yes, with the <a href="https://github.com/prometheus/alertmanager">Alertmanager</a>.</p>
+<p>Currently, the following external systems are supported:</p>
+<ul>
+<li>Email</li>
+<li>Generic Webhooks</li>
+<li><a href="https://www.hipchat.com/">HipChat</a></li>
+<li><a href="https://www.opsgenie.com/">OpsGenie</a></li>
+<li><a href="http://www.pagerduty.com/">PagerDuty</a></li>
+<li><a href="https://pushover.net/">Pushover</a></li>
+<li><a href="https://slack.com/">Slack</a></li>
+</ul>
+<h2 id="can-i-monitor-machines">Can I monitor machines?</h2>
+<p>Yes, the <a href="https://github.com/prometheus/node_exporter">Node Exporter</a> exposes an extensive set of machine-level metrics on Linux and other Unix systems such as CPU usage, memory, disk utilization, filesystem fullness, and network bandwidth.</p>
+<h2 id="can-i-monitor-network-devices">Can I monitor network devices?</h2>
+<p>Yes, the <a href="https://github.com/prometheus/snmp_exporter">SNMP Exporter</a> allows monitoring of devices that support SNMP.</p>
+<h2 id="can-i-monitor-batch-jobs">Can I monitor batch jobs?</h2>
+<p>Yes, using the <a href="https://prometheus.io/docs/instrumenting/pushing/">Pushgateway</a>. See also the <a href="https://prometheus.io/docs/practices/instrumentation/#batch-jobs">best practices</a> for monitoring batch jobs.</p>
+<h2 id="can-i-monitor-jvm-applications-via-jmx">Can I monitor JVM applications via JMX?</h2>
+<p>Yes, for applications that you cannot instrument directly with the Java client, you can use the <a href="https://github.com/prometheus/jmx_exporter">JMX Exporter</a> either standalone or as a Java Agent.</p>
+<h1 id="useful-link">Useful Link</h1>
+<ul>
+<li><a href="https://prometheus.io/docs/introduction/overview/">Prometheus official documents</a></li>
+<li><a href="https://www.slideshare.net/ShiaoAnYuan/monitoring-with-prometheus-75300066">Brief Introduction</a></li>
+<li><a href="http://dockone.io/article/3065">Prometheus中动态发现Target和Relabel的应用</a></li>
+<li><a href="https://www.jianshu.com/p/93412a925da2">规划 Prometheus 的存储用量</a></li>
+<li><a href="https://songjiayang.gitbooks.io/prometheus/content/">Prometheus 实战</a></li>
+<li><a href="https://www.howtoing.com/how-to-query-prometheus-on-ubuntu-14-04-part-1">如何查询Prometheus在Ubuntu 14.04第1部分</a></li>
+<li><a href="https://www.howtoing.com/how-to-query-prometheus-on-ubuntu-14-04-part-2">如何查询Prometheus在Ubuntu 14.04第2部分</a></li>
+<li><a href="https://prometheus.io/webtools/alerting/routing-tree-editor/">Alertmanager routing tree editor</a></li>
+<li><a href="http://blog.51cto.com/xujpxm/2055970">Prometheus Alerting Flow</a></li>
+<li><a href="https://pracucci.com/prometheus-understanding-the-delays-on-alerting.html">Prometheus: understanding the delays on alerting</a></li>
+<li><a href="https://www.robustperception.io/whats-the-difference-between-group_interval-group_wait-and-repeat_interval/">What’s the difference between group_interval, group_wait, and repeat_interval?</a></li>
+<li><a href="https://www.slideshare.net/weaveworks/promql-deep-dive-the-prometheus-query-language">PromQL Deep Dive - The Prometheus Query Language</a></li>
+<li><a href="https://prometheus.io/webtools/alerting/routing-tree-editor/">Routing tree editor</a></li>
+</ul>
+
+</div>
+
+<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "chihkaiyu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </main>
+
+    
+      
+    
+  </body>
+</html>

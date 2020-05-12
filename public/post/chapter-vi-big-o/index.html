@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-TW" lang="zh-TW">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.70.0" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Chapter VI - Big O &middot; No Idiots Allowed Here</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://chihkaiyu.github.iocss/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://chihkaiyu.github.io/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="https://chihkaiyu.github.io/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://chihkaiyu.github.io"><h1>No Idiots Allowed Here</h1></a>
+      <p class="lead">
+       Are you an idiot? 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://chihkaiyu.github.io">Home</a> </li>
+        <li><a href="https://chihkaiyu.github.io/page/about"> About </a></li><li><a href="https://chihkaiyu.github.io/post"> Archives </a></li><li><a href="https://chihkaiyu.github.io/page/tags"> Tags </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>Chapter VI - Big O</h1>
+  <time datetime=2019-03-07T00:24:00&#43;0800 class="post-date">Thu, Mar 7, 2019</time>
+  <h1 id="chapter-vi---big-o">Chapter VI - Big O</h1>
+<h1 id="big-o-big-theta-and-big-omega">Big O, Big Theta, and Big Omega</h1>
+<p>學術上使用 big O, big theta, big omega 來描述執行速度。然而工程上 (或是面試)，人們常會將 big theta 及 big O 混在一起。工程上的 big O 即是學術上的 big theta。<br>
+例如印出一個 array，在學術上說 O(N^2) 是正確的，但工程上我們會說這是 O(N)。<br>
+本書所有例子都會使用工程上的 big O。</p>
+<h2 id="o-big-o">O (big O)</h2>
+<p>學術上，big O 用來描述時間的 upper bound。例如印出一個 array 的值，可以說是 O(N)，但也可以說是 O(N^2)、O(N^3)。有點類似小於等於的概念。</p>
+<h2 id="ω-big-omega">Ω (big omega)</h2>
+<p>學術上，big omega 等價於 lower bound。例如印出一個 array 的值，可以說是 Ω(N)，也可以說是 Ω(log N) 或 Ω(1)。即是：不會比他 (N) 還更快。</p>
+<h2 id="θ-big-theta">θ (big theta)</h2>
+<p>學術上，big theta 表示 big O 及 big omega。例如某個演算法是 θ(N) 當他為 O(N) 且為 Ω(N)。</p>
+<h1 id="space-complexity">Space Complexity</h1>
+<p>空間複雜度與時間複雜度是相似的，例如我們需要產生一長度為 n 的 array，則將需要 O(n) 的空間。如果需要二維 nxn 的 array，則需要 O(n^2)。<br>
+遞迴的 stack 也必須計算在內，例如底下這段 code，他的時間複雜度為 O(n)，空間複雜度為 O(n)。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">sum</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">sum</span>(<span style="color:#a6e22e">n</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+}
+</code></pre></div><p>每一次呼叫都會增加一層堆疊，並真的有使用到記憶體。</p>
+<pre><code>sum(4)
+    -&gt; sum(3)
+        -&gt; sum(2)
+            -&gt; sum(1)
+                -&gt; sum(0)
+</code></pre><p>然而並不是呼叫了 n 次就代表使用了 O(n) 的空間，底下這段 code 的時間複雜度為 O(n) 然而空間複雜度只有 O(1)，因為每一次呼叫並不是同時發生的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">pairSumSequence</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#a6e22e">sum</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">n</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+        <span style="color:#a6e22e">sum</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">pairSum</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">i</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+    }
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">pairSum</span>(<span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">b</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">b</span>
+}
+</code></pre></div><h1 id="drop-the-constants">Drop the Constants</h1>
+<p>在某些情形下，O(N) 的 code 是很有可能比 O(1) 的 code 還快的。Big O 只是描述增長的速率，因此我們可以不考慮常數的影響。</p>
+<h1 id="drop-the-non-dominant-terms">Drop the Non-Dominant Terms</h1>
+<p>上面提到常數項我們不考慮，那非常數項，又不主要影響的因子呢？<br>
+我們也不考慮。例如 O(N^2 + N^2)，我們會捨棄常數項變成 O(N^2)，那 O(N^2 + N) 呢？既然 N^2 都不捨棄掉了，更何況是 N？<br>
+同理：</p>
+<ul>
+<li>O(N^2 + N) 變成 O(N^2)</li>
+<li>O(N + log N) 變成 O(N)</li>
+<li>O(5*2^N + 1000N^100) 變成 O(2^N)</li>
+</ul>
+<p>有些時候我們無法捨棄未知的因子，例如 O(B^2 + A)，我們並不知道 A 與 B 的關係。</p>
+<h1 id="multi-part-algorithms-add-vs-multiply">Multi-Part Algorithms: Add vs. Multiply</h1>
+<p>假設你的演算法有兩個步驟，你哪時候要將時間複雜度相加，哪時候又要相乘呢？<br>
+如下列兩段 code：</p>
+<ul>
+<li>Add the Runtimes: O(A + B)</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">a</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">arrA</span> {
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">a</span>)
+}
+
+<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">b</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">arrB</span> {
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">b</span>)
+}
+</code></pre></div><ul>
+<li>Multiply the Runtimes: (A*B)</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">a</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">arrA</span> {
+    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">b</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">arrB</span> {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">a</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;,&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">b</span>)
+    }
+}
+</code></pre></div><p>可得知，你的演算法若是先執行「這個」，完成後再執行「那個」那你就相加；反之，當你每執行一次「這個」的時候，都要執行「那個」，那你就得相乘。</p>
+<h1 id="amortized-time">Amortized Time</h1>
+<p>可動態增長的 array 在 capacity 滿的時候，會產生一個新的 array，其 capacity 是原本的兩倍，並且會將原本的 element 複製過去新的 array，這會造成 O(N) 的操作。<br>
+但大多數時候新增一個 element 的時間是 O(1)，那要如何計算新增 element 的時間複雜度？<br>
+當 array 滿時候，所需要複製的 element 數為 1, 2, 4, 8, 16, &hellip;, X 次，其時間複雜度便是 1 + 2 + 4 + 8 + &hellip; + X，若從尾巴看回去，則是 X + X/2 + X/4 + X/8 + &hellip; + 1，這約略是 2X。<br>
+因此新增 X 個 element 到 array 裡的時間複雜度是 O(2X)，而分攤到每一次新增便是 O(1)。</p>
+<h1 id="log-n-runtimes">Log N Runtimes</h1>
+<p>以二元搜尋為例，在 N 個 elements 且排序好的 array 裡，要找出 X 的話，每次都挑位於中間的 element 相比，若 X &lt; middle 則繼續往左邊找，反之則是右邊。如此一來每次都能去除一半的 elements。<br>
+假設需要搜尋 k 次才能在長度為 N 的 array 找到 X，則表示 2^k = N，即：</p>
+<pre><code>2^4 = 16 -&gt; log2 16 = 4
+log2 N = k -&gt; 2^k = N
+</code></pre><p>可得知 k 為 O(log N)。<br>
+若你發現有一演算法，在每次處理完都會少掉一半的 elements，那其時間複雜度便很有可能是 O(log N)。<br>
+然而 log 的 base 會有影響嗎？答案是在 big O 的情況下不影響。</p>
+<h1 id="recursive-runtimes">Recursive Runtimes</h1>
+<p>試問底下這段 code 的時間複雜度為何？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+}
+</code></pre></div><p>若將每一次呼叫都畫成一個 node，可發現他會是一棵二元樹，因此總 node 數便是時間複雜度：2^0 + 2^1 + 2^2 + &hellip; + 2^N，即是 2^(N+1) - 1，其中 N 為該樹的層數 (從 0 開始計算)。</p>
+<h1 id="examples-and-exercises">Examples and Exercises</h1>
+<h2 id="example-3">Example 3</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">printUnorderedPairs</span>(<span style="color:#a6e22e">array</span> []<span style="color:#66d9ef">int</span>) {
+    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; len(<span style="color:#a6e22e">array</span>); <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">i</span>; <span style="color:#a6e22e">j</span> &lt; len(<span style="color:#a6e22e">array</span>); <span style="color:#a6e22e">j</span><span style="color:#f92672">++</span> {
+            <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">array</span>[<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">array</span>[<span style="color:#a6e22e">j</span>])
+        }
+    }
+}
+</code></pre></div><p>這種 pattern 相當常見，但你不能死記這種 pattern 而是要徹底了解他。<br>
+第一次執行會執行 N-1 次，而第二次為 N-2 次，如此下去。最終我們會有：(N-1) + (N-2) + (N-3) + &hellip; + 1。<br>
+總和便是 N(N-1)/2，其時間複雜度即為 <code>O(N^2)</code>。</p>
+<h2 id="example-4">Example 4</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">printUnorderedPairs</span>(<span style="color:#a6e22e">arrayA</span>, <span style="color:#a6e22e">arrayB</span> []<span style="color:#66d9ef">int</span>) {
+    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; len(<span style="color:#a6e22e">arrayA</span>); <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">j</span> &lt; len(<span style="color:#a6e22e">arrayB</span>); <span style="color:#a6e22e">j</span><span style="color:#f92672">++</span> {
+            <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">array</span>[<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">array</span>[<span style="color:#a6e22e">j</span>])
+        }
+    }
+}
+</code></pre></div><p>與 Example 4 不一樣，這次是兩個長度不一樣的 array，其時間複雜度是 <code>O(A*B)</code>，其中 A 為 arrayA 的長度，B 為 arrayB 的長度。</p>
+<h2 id="example-7">Example 7</h2>
+<p>下列哪些等價於 O(N)？</p>
+<ul>
+<li>O(N + P), where P &lt; N/2</li>
+<li>O(2N)</li>
+<li>O(N + log N)</li>
+<li>O(N + M)</li>
+</ul>
+<p>我們逐一討論：</p>
+<ul>
+<li>由於 P &lt; N/2，所以主要影響的因子是 N，所以可以捨棄 P 不看</li>
+<li>O(2N) 即為 O(N)，因為我們可以捨棄常數項</li>
+<li>O(N) 才是主要因子，我們能捨棄 O(log N)</li>
+<li>我們無從得知 N 與 M 的關係，所以還是 O(N + M)</li>
+</ul>
+<p>上述四項只有最後一項是不等價於 O(N)，其餘皆是。</p>
+<h2 id="example-8">Example 8</h2>
+<p>有一演算法，輸入是 array of strings，會對每一 string 排序，最後會再對整個 array 排序，試問其時間複雜度？<br>
+很多人會這樣回答：排序每組字串是 O(N log N)，而我們要對每組字串排序，所以是 O(N*N log N)。最後要排序整個 array，也是 O(N log N)，所以是 O(N^2 log N + N log N)，捨棄非主要因子項，答案是 O(N^2 log N)。<br>
+<em><strong>這完全是錯誤的。</strong></em><br>
+問題在於只有一個 N 但卻代表了所有東西。上述的 N 既是 string 長度 (哪個 string？) 又是 array 長度。<br>
+甚至在面試的時候使用 a 和 b，或是 m 和 n 這種組合都不好，太容易忘掉他們分別代表什麼。<br>
+你應該這樣定義：</p>
+<ul>
+<li>令 s 為最長 string 的長度</li>
+<li>令 a 為 array 的長度</li>
+</ul>
+<p>我們便能逐一分析：</p>
+<ul>
+<li>對每組 string 排序是 O(s log s)</li>
+<li>總共有 a 組，所以需要 O(a*s log s)</li>
+<li>要排序整個 array，其中有 a 組，你可能會說是 O(a log a)，但這是錯的。我們必須把 string 比對也考慮進來，每組 string 比對是 O(s)，總共有 O(a log a) 組比對，所以是 O(a*s log a)</li>
+</ul>
+<p>最後加總起來：O(a*s(log a + log s ))。</p>
+<h2 id="example-11">Example 11</h2>
+<p>下列是計算 n 階的 code，請問其時間複雜度為？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">factorial</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> &lt; <span style="color:#ae81ff">0</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">factorial</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+    }
+}
+</code></pre></div><p>這只是一個單純的 recursion，從 n 到 n-1 到 n-2 一直到 1，所以是單純的 O(n)。</p>
+<h2 id="example-12">Example 12</h2>
+<p>下列 code 會印出一組 string 所有的排列組合</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">permutation</span>(<span style="color:#a6e22e">str</span>, <span style="color:#a6e22e">prefix</span> <span style="color:#66d9ef">string</span>) {
+	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">str</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">prefix</span>)
+	} <span style="color:#66d9ef">else</span> {
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; len(<span style="color:#a6e22e">str</span>); <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+			<span style="color:#a6e22e">rem</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">str</span>[<span style="color:#ae81ff">0</span>:<span style="color:#a6e22e">i</span>] <span style="color:#f92672">+</span> <span style="color:#a6e22e">str</span>[<span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>:]
+			<span style="color:#a6e22e">permutation</span>(<span style="color:#a6e22e">rem</span>, <span style="color:#a6e22e">prefix</span><span style="color:#f92672">+</span>string(<span style="color:#a6e22e">str</span>[<span style="color:#a6e22e">i</span>]))
+		}
+	}
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">permutation</span>(<span style="color:#e6db74">&#34;abc&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)
+}
+</code></pre></div><p>這題我們可以簡單的計算 <code>permutation</code> 被呼叫了幾次，以及每次呼叫時花多少時間。但我們來試著更準確的 upper bound。</p>
+<h3 id="how-many-times-does-permutation-get-called-in-its-base-case">How many times does permutation get called in its base case?</h3>
+<p>要呼叫 <code>permutation</code> 時，我們就必須從 string 裡挑一個 character 出來，假設有 7 個 characters，則有 7 種選擇。當挑了一個之後，便還有 6 個 characters 可選擇，如此類推則總共有 7 * 6 * 5 * 4 * 3 * 2 * 1，正好是 7!。</p>
+<h3 id="how-many-times-does-permutation-get-called-before-its-base-case">How many times does permutation get called before its base case?</h3>
+<p>上面只討論了呼叫了 <code>permutation</code> 後的 recursion，而我們也必須考慮外面迴圈所呼叫的次數。<br>
+想像有一棵樹表示每次呼叫，則該樹總共會有 n! 葉節點，而每個葉節點貼在長度為 n 的路徑上。<br>
+因此我們得知此樹最多只會有 n * n! 個 nodes。</p>
+<h3 id="how-long-does-each-function-call-take">How long does each function call take?</h3>
+<p>當要印出字串時，需要 O(n)，因為每個 character 都需要被印出來。<br>
+當在做 string 串接時也需要花 O(n)，因為 <code>rem</code>、<code>prefix</code> 及 <code>str[i]</code> 的總和永遠都是會 n。<br>
+因此每個 node 需要 O(n) 的執行時間。</p>
+<h3 id="what-is-the-totoal-runtime">What is the totoal runtime?</h3>
+<p>我們會呼叫 <code>permutation</code> O(n * n!) 次，而每一次需要 O(n) 的時間，所以執行時間最多不會超過 O(n^2 * n!)。</p>
+<h2 id="example-14">Example 14</h2>
+<p>下列 code 將 0 至 n 的 Fibonacci 數字印出來，他的時間複雜度為何？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">allFib</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) {
+    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">n</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%v: %v&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">fib</span>(<span style="color:#a6e22e">i</span>))
+    }
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">fib</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fib</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#a6e22e">fib</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>)
+}
+</code></pre></div><p>很多人看到 <code>fib(n)</code> 馬上想到 recursion form 是 O(2^n)，而外面又有一層迴圈呼叫了 n 次，所以這段 code 的時間複雜度是 O(n2^n)。<br>
+<em><strong>這是錯的。</strong></em><br>
+錯的地方在於 n 是持續變動的：</p>
+<pre><code>fib(1) -&gt; 2^1 steps
+fib(2) -&gt; 2^2 steps
+fib(3) -&gt; 2^3 steps
+...
+fib(n) -&gt; 2^n steps
+</code></pre><p>總共有 2^1 + 2^2 + 2^3 + &hellip; + 2^n，其和是 2^(n+1)，因此時間複雜度為 O(2^n)。</p>
+<h2 id="example-16">Example 16</h2>
+<p>下列 code 會將 1 至 n 所有是 2 的次方數的數字印出來，例如 n 是 4，則會印出 1、2、4。那他的時間複雜度為何？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">powerOf2</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> &lt; <span style="color:#ae81ff">1</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#ae81ff">1</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#a6e22e">prev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">powerOf2</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>)
+        <span style="color:#a6e22e">curr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">prev</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span>
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">curr</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">curr</span>
+    }
+}
+</code></pre></div><p>有許多方式可以得到此 code 的時間複雜度，如下：</p>
+<h3 id="what-it-does">What It Does</h3>
+<p><code>powerOf2(50)</code> 實際的呼叫過程是：</p>
+<pre><code>powerOf2(50)
+    -&gt; powerOf2(25)
+        -&gt; powerOf2(12)
+            -&gt; powerOf2(6)
+                -&gt; powerOf2(3)
+                    -&gt; powerOf2(1)
+                        -&gt; print &amp; reutnr 1
+                    print &amp; reutnr 2
+                print &amp; reutnr 4
+            print &amp; reutnr 8
+        print &amp; reutnr 16
+    print &amp; reutnr 32
+</code></pre><p>可以看出每呼叫一次，其值就少了一半，其時間複雜度為 O(log n)。</p>
+<h3 id="what-it-means">What It Means</h3>
+<p>此演算法是要計算出所有 1 至 n 的 2 的次方數。<br>
+每一次呼叫 <code>powerOf2</code> 都會正好計算出一個數字並將他印出且回傳。所以若此演算法最後印出 13 個數字，則表示 <code>powerOf2</code> 被呼叫了 13 次。<br>
+回到問題本身，在 1 至 n 之間，有多少個 2 的次方數的數字，就代表了 <code>powerOf2</code> 會被呼叫幾次，即所求的時間複雜度。<br>
+在 1 到 n 之間有 log n 個 2 的次方數，所以其時間複雜度即為 O(log n)。</p>
+<h3 id="rate-of-increase">Rate of Increase</h3>
+<p>我們也可以思考當 n 變大時，其執行時間會如何變化。其實這也是 big O 所代表的意義。<br>
+若 N 從 P 變成 P+1，則 <code>powerOf2</code> 的呼叫次數可能根本不會改變。那什麼時候 <code>powerOf2</code> 才會增加？答案是當 n 變為兩倍時。<br>
+因此，要求得 <code>powerOf2</code> 的時間複雜度，便是計算將 1 不斷以兩倍成長，直到他變成 n，如同此等式：2^x = n，其 x 便是我們所求的時間複雜度。<br>
+而 x 便是 log n，因此時間複雜度為 O(log n)</p>
+
+</div>
+
+<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "chihkaiyu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </main>
+
+    
+      
+    
+  </body>
+</html>

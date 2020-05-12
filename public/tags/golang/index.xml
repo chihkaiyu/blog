@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>golang on No Idiots Allowed Here</title>
+    <link>https://chihkaiyu.github.io/tags/golang/</link>
+    <description>Recent content in golang on No Idiots Allowed Here</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-TW</language>
+    <lastBuildDate>Tue, 02 Jul 2019 00:03:00 +0800</lastBuildDate>
+    
+	<atom:link href="https://chihkaiyu.github.io/tags/golang/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Golang Memory Management (based on 1.12.5)</title>
+      <link>https://chihkaiyu.github.io/post/golang-memory-management/</link>
+      <pubDate>Tue, 02 Jul 2019 00:03:00 +0800</pubDate>
+      
+      <guid>https://chihkaiyu.github.io/post/golang-memory-management/</guid>
+      <description>Golang Memory Management (based on 1.12.5) 此文是我在看過許多 Golang 記憶體管理的文章後，再搭配 souce code 所整理出來的。有點像是利用 souce code 來驗證我是否理解網路上所搜尋到的文章。 Golang 基於 TCMalloc (Thread-Caching</description>
+    </item>
+    
+  </channel>
+</rss>
